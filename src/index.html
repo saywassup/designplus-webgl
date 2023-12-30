@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>DesignPlus - POC</title>
+    <meta charset="UTF-8" />
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="page-debugger" id="page-debugger">
+        <form id="page-debugger-form" class="page-debugger__form">
+          <div class="page-debugger__form-group page-debugger__form-group--inputs">
+            <label class="page-debugger__form-label">Pages:</label>
+            <input class="page-debugger__form-input page-debugger__form-input--pages" type="text" name="page-number-scalar" id="page-debugger-page-scalar" value="4" />
+          </div>
+          
+          <div class="page-debugger__form-group page-debugger__form-group--inputs">
+            <label class="page-debugger__form-label">Elements per page:</label>
+            <input class="page-debugger__form-input page-debugger__form-input--elements" type="text" name="page-number-elements" id="page-debugger-element-scalar" value="20" />
+          </div>
+
+          <div class="page-debugger__form-group page-debugger__form-group--buttons">
+            <button id="page-debugger-form-button" class="page-debugger__form-button page-debugger__form-button--create" type="button">Create pages</button>
+            <button id="page-debugger-add" class="page-debugger__form-button page-debugger__form-button--add" type="button">Add page</button>
+          </div>
+        </form>
+        <div class="page-debugger__stats">
+            Total of elements: <span class="page-debugger__stats-total"></span>
+        </div>
+      </div>
+
+      <div id="page-container" class="pages">
+        
+      </div>
+    </div>
+
+    <script defer src="./index.mjs" type="module"></script>
+  </body>
+</html>
