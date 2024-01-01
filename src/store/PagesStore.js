@@ -8,6 +8,8 @@ class _PagesStore extends component() {
         this.__activePages = new Map();
 
         this.__commonPageBoundings = {};
+
+        console.log(this);
     }
 
     get pages() {

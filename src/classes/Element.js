@@ -1,16 +1,18 @@
 const { v4: uuidv4 } = require("uuid");
 
-import { component } from "bidello";
+import { Container } from "pixi.js";
+import gsap from "gsap/gsap-core";
+import bidelloSingleton, { component } from "bidello";
 
 import { Vec2D } from "../utils/Vec2D";
 
 import { viewport } from "../emitters/viewport";
 import { pointer } from "../emitters/pointer";
 
-import gsap from "gsap/gsap-core";
 import deferred from "../utils/deferred";
 import { clamp } from "math-toolbox";
-
+import { ElementsStore } from "../store/ElementsStore";
+import { RendererContext } from "../controllers/AppContext";
 
 
 /**
@@ -34,21 +36,13 @@ import { clamp } from "math-toolbox";
          * 
 **/
 
-export class Element extends component() {
-    constructor({
-        pageId = null,
-        position = new Vec2D(0),
-        dimensions = new Vec2D(100),
-        rotation = 0
-    } = {}) {
+export class Element extends component(Container) {
+    constructor() {
         super();
 
         this.isReady = deferred();
 
-        this.__$el = null;
-
         this.id = uuidv4();
-        this.pageId = pageId;
 
         this.isActive = false;
         this.isMoving = false;
@@ -56,26 +50,20 @@ export class Element extends component() {
         this.isRotating = false;
         this.isLocked = false;
         this.isSelected = false;
-        this.isVisible = false;
 
         this.speedScaling = 1;
         this.speedMoving = 1;
         this.speedRotating = 1;
 
         this.__tempRot = {};
-        this.__rotation = rotation;
-        this.__targetRotation = rotation;
+        this.__rotation = 0;
+        this.__targetRotation = 0;
 
-        this.__dimensions = dimensions;
-        this.__targetDimensions = dimensions;
+        this.__dimensions = new Vec2D();
+        this.__targetDimensions = new Vec2D();
 
-        this.__position = position;
-        this.__targetPosition = position;
-
-        this.__boundings = {};
-
-        this.computeBoundings = this.computeBoundings.bind(this);
-        this.getElementsById = this.getElementsById.bind(this);
+        this.__position = new Vec2D();
+        this.__targetPosition = new Vec2D();
 
         this.__move = this.__move.bind(this);
         this.__rotate = this.__rotate.bind(this);
@@ -85,26 +73,10 @@ export class Element extends component() {
     }
 
     async init() {
-        await this.isReady;
-
-        // Enable RAF
-        gsap.ticker.add(this.__raf);
+        (await RendererContext).ticker.add(this.__raf);
     }
 
     // getters/setters
-    get $el() {
-        return this.__$el;
-    }
-
-    set $el(element) {
-        this.__$el = element;
-        this.computeBoundings();
-    }
-
-    get dimensions() {
-        return this.__dimensions;
-    }
-
     set dimensions(newDimensions = {}) {
         if ('width' in newDimensions) this.__targetDimensions.width = newDimensions.width;
         if ('height' in newDimensions) this.__targetDimensions.height = newDimensions.height;
@@ -128,23 +100,22 @@ export class Element extends component() {
     }
 
     // Public Methods
-    async computeBoundings() {
-        await this.isReady;
+    enable() {
+        this.isActive = true;
+        ElementsStore.activeElements.set(this.id, this.id);
 
-        this.boundings = this.__$el.getBoundingClientRect();
+        bidelloSingleton.register(this);
     }
 
-    async getElementsById(dictionary) {
-        for (let prop in dictionary) {
-            let el = document.getElementById(dictionary[prop]);
+    disable() {
+        this.isActive = false;
+        ElementsStore.activeElements.delete(this.id);
 
-            if (el) {
-                this[dictionary[prop]] = el;
-            }
-        }
+        bidelloSingleton.unregister(this);
     }
     
     // Public Override Methods
+    raf() {}
     moveCb() {}
     rotateCb() {}
     scaleCb() {}
@@ -177,7 +148,6 @@ export class Element extends component() {
     }
 
     __scale() {
-        console.log(pointer)
         let x = clamp(-1, 1, pointer.move.x);
         let y = clamp(-1, 1, pointer.move.y);
 
@@ -189,11 +159,11 @@ export class Element extends component() {
 
     __move() {
         if (this.pageId) {
-            this.__targetPosition.x = pointer.x - (this.page.boundings.x + (this.__dimensions.width / 2));
-            this.__targetPosition.y = pointer.y - (this.page.boundings.y + (this.__dimensions.height / 2)) - viewport.scroll.y;
+            this.__targetPosition.x = pointer.x - (this.page.x + (this.width / 2));
+            this.__targetPosition.y = pointer.y - (this.page.y + (this.height / 2)) - viewport.scroll.y;
         } else {
-            this.__targetPosition.x = pointer.x - (this.dimensions.width / 2);
-            this.__targetPosition.y = pointer.y - (this.dimensions.height / 2) - viewport.scroll.y;
+            this.__targetPosition.x = pointer.x - (this.width / 2);
+            this.__targetPosition.y = pointer.y - (this.height / 2) - viewport.scroll.y;
         }
 
         this.moveCb();
@@ -203,22 +173,22 @@ export class Element extends component() {
         return;
     }
 
-    __raf() {
-        if (!this.isActive || !this.__$el) return;
+    __raf(delta) {
+        if (!this.isActive) return;
 
         // Compute Dimensions
-        this.__dimensions.width += (this.__targetDimensions.width - this.__dimensions.width) * this.speedScaling;
-        this.__dimensions.height += (this.__targetDimensions.height - this.__dimensions.height) * this.speedScaling;
+        this.__dimensions.width += (this.__targetDimensions.width - this.__dimensions.width) * this.speedScaling * delta;
+        this.__dimensions.height += (this.__targetDimensions.height - this.__dimensions.height) * this.speedScaling * delta;
 
         // Compute Positions
-        this.__position.x += (this.__targetPosition.x - this.__position.x) * this.speedMoving;
-        this.__position.y += (this.__targetPosition.y - this.__position.y) * this.speedMoving;
+        this.__position.x += (this.__targetPosition.x - this.__position.x) * this.speedMoving * delta;
+        this.__position.y += (this.__targetPosition.y - this.__position.y) * this.speedMoving * delta;
 
         // Compute Rotation
-        this.__rotation += (this.__targetRotation - this.__rotation) * this.speedRotating;
+        this.__rotation += (this.__targetRotation - this.__rotation) * this.speedRotating * delta;
 
-        // Apply Transformations
-        this.__$el.style.transform = `translate(${this.__position.x}px, ${this.__position.y}px) rotate(${this.__rotation}deg) scale(1, 1)`;
+        this.x = this.__position.x;
+        this.y = this.__position.y;
 
         // Call Custom RAF
         this.raf();

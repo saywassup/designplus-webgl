@@ -6,6 +6,8 @@ class _ElementsStore extends component() {
 
         this.__elements = new Map();
         this.__activeElements = new Map();
+
+        console.log(this);
     }
 
     get elements() {
