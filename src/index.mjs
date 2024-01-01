@@ -14,12 +14,9 @@ import { PageElement } from "./elements/PageElement";
 import { SquareElement } from "./elements/SquareElement";
 import { RendererContext } from "./controllers/AppContext";
 import { randomInt } from "math-toolbox";
-import { StatsDebugger } from "./utils/StatsDebugger";
 
 class App {
     constructor() {
-        document.body.appendChild( StatsDebugger.dom );
-
         this.initRenderer();
         this.initPage();
         this.initSquareElements();
@@ -53,7 +50,7 @@ class App {
     async initSquareElements() {
         await RendererContext;
 
-        const MAX_SQUARES = 50;
+        const MAX_SQUARES = 200;
 
         let width = 75;
         let height = 75;
