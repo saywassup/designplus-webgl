@@ -66,7 +66,6 @@ export class SquareElement extends Element {
     }
 
     __onPointerDownHandler() {
-        console.log('enabled')
         this.enable();
         this.isMoving = true;
     }

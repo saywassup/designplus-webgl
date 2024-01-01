@@ -13,6 +13,7 @@ import deferred from "../utils/deferred";
 import { clamp } from "math-toolbox";
 import { ElementsStore } from "../store/ElementsStore";
 import { RendererContext } from "../controllers/AppContext";
+import { StatsDebugger } from "../utils/StatsDebugger";
 
 
 /**
@@ -176,6 +177,8 @@ export class Element extends component(Container) {
     __raf(delta) {
         if (!this.isActive) return;
 
+        StatsDebugger.begin();
+
         // Compute Dimensions
         this.__dimensions.width += (this.__targetDimensions.width - this.__dimensions.width) * this.speedScaling * delta;
         this.__dimensions.height += (this.__targetDimensions.height - this.__dimensions.height) * this.speedScaling * delta;
@@ -192,5 +195,7 @@ export class Element extends component(Container) {
 
         // Call Custom RAF
         this.raf();
+
+        StatsDebugger.end();
     }
 }
